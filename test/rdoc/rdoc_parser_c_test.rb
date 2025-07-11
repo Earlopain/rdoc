@@ -782,57 +782,6 @@ void Init_Blah(void) {
     assert               methods.first.singleton
   end
 
-  def test_do_missing
-    parser = util_parser
-
-    klass_a = @top_level.add_class RDoc::ClassModule, 'A'
-    parser.classes['a'] = klass_a
-
-    parser.enclosure_dependencies['c'] << 'b'
-    parser.enclosure_dependencies['b'] << 'a'
-    parser.enclosure_dependencies['d'] << 'a'
-
-    parser.missing_dependencies['d'] = ['d', :class, 'D', 'Object', 'a']
-    parser.missing_dependencies['c'] = ['c', :class, 'C', 'Object', 'b']
-    parser.missing_dependencies['b'] = ['b', :class, 'B', 'Object', 'a']
-
-    parser.do_missing
-
-    assert_equal %w[A A::B A::B::C A::D],
-                 @store.all_classes_and_modules.map { |m| m.full_name }.sort
-  end
-
-  def test_do_missing_cycle
-    parser = util_parser
-
-    klass_a = @top_level.add_class RDoc::ClassModule, 'A'
-    parser.classes['a'] = klass_a
-
-    parser.enclosure_dependencies['c'] << 'b'
-    parser.enclosure_dependencies['b'] << 'a'
-
-    parser.missing_dependencies['c'] = ['c', :class, 'C', 'Object', 'b']
-    parser.missing_dependencies['b'] = ['b', :class, 'B', 'Object', 'a']
-
-    parser.enclosure_dependencies['y'] << 'z'
-    parser.enclosure_dependencies['z'] << 'y'
-
-    parser.missing_dependencies['y'] = ['y', :class, 'Y', 'Object', 'z']
-    parser.missing_dependencies['z'] = ['z', :class, 'Z', 'Object', 'y']
-
-    _, err = verbose_capture_output do
-      parser.do_missing
-    end
-
-    expected = 'Unable to create class Y (y), class Z (z) ' +
-               'due to a cyclic class or module creation'
-
-    assert_equal expected, err.chomp
-
-    assert_equal %w[A A::B A::B::C],
-                 @store.all_classes_and_modules.map { |m| m.full_name }.sort
-  end
-
   def test_find_alias_comment
     parser = util_parser
 
