@@ -36,7 +36,7 @@ class RDocTokenStreamTest < RDoc::TestCase
   end
 
   def test_class_to_html_empty
-    assert_equal '', RDoc::TokenStream.to_html([])
+    assert_equal '', RDoc::TokenStream.to_html([], '')
   end
 
   def test_source_language_ruby

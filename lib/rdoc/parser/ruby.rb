@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'prism'
+require_relative 'prism_colorizer'
 require_relative 'ripper_state_lex'
 
 # Parse and collect document from Ruby source code.
@@ -198,9 +199,9 @@ class RDoc::Parser::Ruby < RDoc::Parser
   # Scans this Ruby file for Ruby constructs
 
   def scan
-    @tokens = RDoc::Parser::RipperStateLex.parse(@content)
     @lines = @content.lines
     result = Prism.parse(@content)
+    @tokens = RDoc::Parser::PrismColorizer.tokens(result)
     @program_node = result.value
     @line_nodes = {}
     prepare_line_nodes(@program_node)
@@ -490,21 +491,13 @@ class RDoc::Parser::Ruby < RDoc::Parser
     comment_text
   end
 
-  def slice_tokens(start_pos, end_pos) # :nodoc:
-    start_index = @tokens.bsearch_index { |t| ([t.line_no, t.char_no] <=> start_pos) >= 0 }
-    end_index = @tokens.bsearch_index { |t| ([t.line_no, t.char_no] <=> end_pos) >= 0 }
-    tokens = @tokens[start_index...end_index]
-    tokens.pop if tokens.last&.kind == :on_nl
-    tokens
-  end
-
   # Returns tokens from the given location
 
   def visible_tokens_from_location(location)
-    slice_tokens(
-      [location.start_line, location.start_character_column],
-      [location.end_line, location.end_character_column]
-    )
+    start_offset, end_offset = location.start_offset, location.end_offset
+    start_index = @tokens.bsearch_index { |t| (t.start_offset <=> start_offset) >= 0 }
+    end_index = @tokens.bsearch_index { |t| (t.end_offset <=> end_offset) >= 0 }
+    @tokens[start_index...end_index]
   end
 
   # Handles `public :foo, :bar` `private :foo, :bar` and `protected :foo, :bar`

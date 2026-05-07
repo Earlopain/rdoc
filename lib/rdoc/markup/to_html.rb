@@ -336,14 +336,12 @@ class RDoc::Markup::ToHtml < RDoc::Markup::Formatter
     # Otherwise, add language class when applicable and skip Ruby highlighting
     content = if verbatim.ruby? || (format.nil? && parseable?(text))
                 begin
-                  tokens = RDoc::Parser::RipperStateLex.parse text
+                  tokens = RDoc::Parser::PrismColorizer.tokens(Prism.parse(text))
                   klass  = ' class="ruby"'
 
-                  result = RDoc::TokenStream.to_html tokens
+                  result = RDoc::TokenStream.to_html_prism(tokens, text)
                   result = result + "\n" unless "\n" == result[-1]
                   result
-                rescue
-                  CGI.escapeHTML text
                 end
               else
                 klass = " class=\"#{format}\"" if format

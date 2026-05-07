@@ -57,6 +57,57 @@ module RDoc::TokenStream
     end.join
   end
 
+  TOKEN_TYPE_TO_CLASS = {
+    string:    'ruby-string',
+    dstring:   'ruby-node',
+    regexp:    'ruby-regexp',
+    symbol:    'ruby-value',
+    label:     'ruby-value',
+    char:      'ruby-value',
+    int:       'ruby-value',
+    float:     'ruby-value',
+    rational:  'ruby-value',
+    imaginary: 'ruby-value',
+    backref:   'ruby-node',
+    ivar:      'ruby-ivar',
+    cvar:      'ruby-identifier',
+    gvar:      'ruby-identifier',
+    const:     'ruby-constant',
+    operator:  'ruby-operator',
+    ident:     'ruby-identifier',
+    heredoc_delimiter: 'ruby-identifier',
+    heredoc_content:   'ruby-value',
+    keyword:   'ruby-keyword',
+    comment:   'ruby-comment',
+  }
+
+  ##
+  # Converts +tokens+ to HTML, wrapping various tokens with
+  # <tt><span></tt> elements. Tokens are wrapped in spans
+  # with their corresponding class names.
+
+  def self.to_html_prism(tokens, code)
+    result = +""
+    cursor = 0
+
+    tokens.each do |token|
+      result << CGI.escapeHTML(code.byteslice(cursor...token.start_offset))
+
+      clazz = TOKEN_TYPE_TO_CLASS.fetch(token.type)
+      text = CGI.escapeHTML(code.byteslice(token.start_offset...token.end_offset))
+
+      # Try to generate somewhat pretty html by moving the newline out of the span element
+      end_with_newline = text.end_with?("\n")
+      text = text.chomp if end_with_newline
+      result << "<span class=\"#{clazz}\">#{text}</span>#{"\n" if end_with_newline}"
+
+      cursor = token.end_offset
+    end
+
+    result << CGI.escapeHTML(code.byteslice(cursor..))
+    result
+  end
+
   ##
   # Adds +tokens+ to the collected tokens
 
